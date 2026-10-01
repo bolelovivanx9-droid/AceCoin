@@ -24,7 +24,10 @@ async def menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif text == "🎰 Игры":
         await update.message.reply_text(
-            "🎰 Игры скоро будут доступны"
+            "🎰 Доступные игры:\n\n"
+            "💎 Сокровища\n"
+            "🎰 Слоты\n"
+            "🎲 Кубики"
         )
 
     elif text == "👤 Профиль":
