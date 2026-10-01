@@ -1,10 +1,24 @@
-import asyncio
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters
+)
 
-from telegram.ext import Application
 from config import BOT_TOKEN
 
+from core.database import init_db
+from core.logger import setup_logger
 
-async def main():
+from handlers.start import start
+from handlers.menu import menu_buttons
+
+
+def main():
+
+    logger = setup_logger()
+
+    init_db()
 
     app = (
         Application
@@ -13,14 +27,21 @@ async def main():
         .build()
     )
 
-    print("🎰 AceCoin Casino запущен")
+    app.add_handler(
+        CommandHandler("start", start)
+    )
 
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            menu_buttons
+        )
+    )
 
-    await asyncio.Event().wait()
+    logger.info("🎰 AceCoin бот запущен")
+
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

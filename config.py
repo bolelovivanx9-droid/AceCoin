@@ -1,5 +1,9 @@
-BOT_TOKEN = "8947912982:AAE04JQrkG8xBlBeSl6wa1hCUtqftCjBC9g"
+import os
+from dotenv import load_dotenv
 
-BOT_NAME = "AceCoin Casino"
+load_dotenv()
 
-START_BALANCE = 1000
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не найден в .env")
