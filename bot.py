@@ -12,6 +12,7 @@ from core.logger import setup_logger
 
 from handlers.start import start
 from handlers.menu import menu_buttons
+from handlers.admin import add_money
 
 
 def main():
@@ -29,6 +30,10 @@ def main():
 
     app.add_handler(
         CommandHandler("start", start)
+    )
+
+    app.add_handler(
+    CommandHandler("addmoney", add_money)
     )
 
     app.add_handler(
