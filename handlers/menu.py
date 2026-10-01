@@ -1,3 +1,7 @@
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+from keyboards.treasure import treasure_field
+from games.treasure import create_game
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -30,6 +34,18 @@ async def menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🎲 Кубики"
         )
 
+    elif text == "💎 Сокровища":
+
+        user_id = update.effective_user.id
+
+        create_game(user_id)
+
+        await update.message.reply_text(
+            "💎 Сокровища\n\n"
+            "Выбери клетку:",
+            reply_markup=treasure_field()
+        )
+    
     elif text == "👤 Профиль":
         await update.message.reply_text(
             "👤 Профиль игрока"

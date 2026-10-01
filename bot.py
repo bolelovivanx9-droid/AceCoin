@@ -2,6 +2,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters
 )
 
@@ -13,6 +14,7 @@ from core.logger import setup_logger
 from handlers.start import start
 from handlers.menu import menu_buttons
 from handlers.admin import add_money
+from handlers.callbacks import treasure_click
 
 
 def main():
@@ -34,6 +36,10 @@ def main():
 
     app.add_handler(
     CommandHandler("addmoney", add_money)
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(treasure_click)
     )
 
     app.add_handler(
