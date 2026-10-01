@@ -1,3 +1,5 @@
+import asyncio
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -17,11 +19,12 @@ from handlers.admin import add_money
 from handlers.callbacks import treasure_click
 
 
-def main():
+async def main():
 
     logger = setup_logger()
 
     init_db()
+
 
     app = (
         Application
@@ -30,17 +33,29 @@ def main():
         .build()
     )
 
-    app.add_handler(
-        CommandHandler("start", start)
-    )
 
     app.add_handler(
-    CommandHandler("addmoney", add_money)
+        CommandHandler(
+            "start",
+            start
+        )
     )
 
+
     app.add_handler(
-        CallbackQueryHandler(treasure_click)
+        CommandHandler(
+            "addmoney",
+            add_money
+        )
     )
+
+
+    app.add_handler(
+        CallbackQueryHandler(
+            treasure_click
+        )
+    )
+
 
     app.add_handler(
         MessageHandler(
@@ -49,10 +64,35 @@ def main():
         )
     )
 
-    logger.info("🎰 AceCoin бот запущен")
 
-    app.run_polling()
+    logger.info(
+        "🎰 AceCoin бот запущен"
+    )
+
+
+    await app.initialize()
+
+    await app.start()
+
+    await app.updater.start_polling()
+
+
+    try:
+        while True:
+            await asyncio.sleep(3600)
+
+    except KeyboardInterrupt:
+        pass
+
+
+    await app.updater.stop()
+
+    await app.stop()
+
+    await app.shutdown()
+
 
 
 if __name__ == "__main__":
-    main()
+
+    asyncio.run(main())

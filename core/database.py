@@ -84,3 +84,21 @@ def change_balance(user_id: int, amount: int):
 
     conn.commit()
     conn.close()
+
+
+def remove_money(user_id, amount):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE users
+        SET balance = balance - ?
+        WHERE user_id = ?
+        """,
+        (amount, user_id)
+    )
+
+    conn.commit()
+    conn.close()
