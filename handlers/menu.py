@@ -1206,32 +1206,8 @@ async def menu_buttons(
 
     elif text == "📊 Статистика":
         await stats_command(update, context)
-
-        if not stats:
-            await message.reply_text(
-                "❌ Профиль не найден. Нажми /start и попробуй снова."
-            )
-            return
-
-        await message.reply_text(
-            "📊 <b>СТАТИСТИКА ACECOIN</b>\n"
-            "━━━━━━━━━━━━━━━━━━\n\n"
-            f"👤 Игрок: <b>{html.escape(user.first_name or 'Игрок')}</b>\n"
-            f"⭐ Опыт: <b>{stats['xp']} XP</b>\n"
-            f"🎚️ Уровень: <b>{stats['level']}</b>\n"
-            f"💎 Ранг: <b>{stats['rank_emoji']} {stats['rank']}</b>\n"
-            f"📈 До следующего уровня: "
-            f"<b>{stats['xp_to_next_level']} XP</b>\n\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            f"🏆 Победы: <b>{stats['wins']}</b>\n"
-            f"💥 Поражения: <b>{stats['losses']}</b>\n"
-            f"🎮 Игр завершено: <b>{stats['games_played']}</b>\n"
-            f"💰 Общий выигрыш: "
-            f"<b>{stats['total_winnings']:,} $</b>\n\n"
-            "━━━━━━━━━━━━━━━━━━",
-            parse_mode="HTML",
-        )
-
+        return
+    
     elif text == "🏆 Квесты":
         await show_quests(update, context)
 
