@@ -1,3 +1,5 @@
+from random import choices
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -11,23 +13,65 @@ from core.database import (
 
 
 MAX_BET = 100_000_000
-JACKPOT_MULTIPLIER = 10
 
 WIN_XP = 5
 LOSS_XP = 2
+
+# Символы и относительные вероятности выпадения.
+SYMBOLS = ["💎", "7️⃣", "🍒", "🍇", "🍋", "🍊"]
+SYMBOL_WEIGHTS = [2, 4, 10, 12, 16, 16]
+
+# Множители полной выплаты, включая исходную ставку.
+TRIPLE_PAYOUTS = {
+    "💎": 10,
+    "7️⃣": 7,
+    "🍒": 5,
+    "🍇": 3,
+    "🍋": 2,
+    "🍊": 2,
+}
+
+PAIR_MULTIPLIER = 1.5
+
+
+def generate_slots_result():
+    """Генерирует три символа и определяет множитель."""
+
+    result = choices(
+        SYMBOLS,
+        weights=SYMBOL_WEIGHTS,
+        k=3,
+    )
+
+    if result[0] == result[1] == result[2]:
+        multiplier = TRIPLE_PAYOUTS[result[0]]
+        combination_name = f"Три {result[0]}"
+
+    elif (
+        result[0] == result[1]
+        or result[0] == result[2]
+        or result[1] == result[2]
+    ):
+        multiplier = PAIR_MULTIPLIER
+        combination_name = "Пара одинаковых символов"
+
+    else:
+        multiplier = 0
+        combination_name = "Без выигрышной комбинации"
+
+    return result, multiplier, combination_name
 
 
 async def slots_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
-    """Игровой автомат Telegram."""
+    """Игровой автомат AceCoin с виртуальными ставками."""
 
     user = update.effective_user
     message = update.effective_message
-    chat = update.effective_chat
 
-    if not user or not message or not chat:
+    if not user or not message:
         return
 
     add_user(user.id, user.username or "unknown")
@@ -37,9 +81,14 @@ async def slots_command(
             "🎰 СЛОТЫ ACECOIN\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
             "Использование:\n"
-            "/slots СТАВКА\n\n"
-            "Пример: /slots 100\n\n"
-            "💰 Джекпот выплачивает 10x от ставки.\n"
+            "/acslots СТАВКА\n\n"
+            "Пример: /acslots 100\n\n"
+            "💎 Три алмаза — x10\n"
+            "7️⃣ Три семёрки — x7\n"
+            "🍒 Три вишни — x5\n"
+            "🍇 Три винограда — x3\n"
+            "🍋 или 🍊 три одинаковых — x2\n"
+            "🎯 Пара одинаковых — x1.5\n\n"
             "⭐ Победа: +5 XP\n"
             "⭐ Поражение: +2 XP\n"
             "━━━━━━━━━━━━━━━━━━"
@@ -51,7 +100,7 @@ async def slots_command(
     except (ValueError, TypeError):
         await message.reply_text(
             "❌ Ставка должна быть целым числом.\n"
-            "Пример: /slots 100"
+            "Пример: /acslots 100"
         )
         return
 
@@ -77,7 +126,7 @@ async def slots_command(
         )
         return
 
-    # Списываем ставку до начала игры.
+    # Списываем ставку перед началом раунда.
     if not remove_money(user.id, bet):
         await message.reply_text(
             "❌ Не удалось списать ставку. "
@@ -85,30 +134,15 @@ async def slots_command(
         )
         return
 
-    try:
-        # Telegram самостоятельно показывает анимацию слотов.
-        dice_message = await context.bot.send_dice(
-            chat_id=chat.id,
-            emoji="🎰",
-        )
-    except Exception:
-        # Если анимацию отправить не удалось, возвращаем ставку.
-        change_balance(user.id, bet)
+    # Генерируем комбинацию.
+    result, multiplier, combination_name = generate_slots_result()
 
-        await message.reply_text(
-            "❌ Не удалось запустить слоты.\n"
-            f"Ставка ${bet:,} возвращена на баланс."
-        )
-        return
+    # Выплата включает исходную ставку.
+    payout = int(bet * multiplier)
 
-    result = dice_message.dice.value
-
-    if result == 64:
-        # Джекпот: выплата составляет 10 ставок.
-        payout = bet * JACKPOT_MULTIPLIER
+    if payout > 0:
         change_balance(user.id, payout)
 
-        # Записываем победу и начисляем опыт.
         record_game(
             user.id,
             won=True,
@@ -116,23 +150,15 @@ async def slots_command(
             xp_reward=WIN_XP,
         )
 
-        await context.bot.send_message(
-            chat_id=chat.id,
-            text=(
-                "🎉💎 ДЖЕКПОТ! 💎🎉\n"
-                "━━━━━━━━━━━━━━━━━━\n\n"
-                f"👤 Игрок: {user.first_name}\n"
-                f"🎲 Ставка: ${bet:,}\n"
-                f"🏆 Выплата: ${payout:,}\n"
-                f"💰 Чистый выигрыш: ${payout - bet:,}\n"
-                f"⭐ Опыт: +{WIN_XP} XP\n"
-                f"👛 Баланс: ${get_balance(user.id):,}\n\n"
-                "🔥 Невероятная удача!\n"
-                "━━━━━━━━━━━━━━━━━━"
-            ),
+        xp_text = f"+{WIN_XP} XP"
+
+        outcome_text = (
+            f"🎉 Выигрыш! Множитель: x{multiplier:g}\n"
+            f"🏆 Выплата: ${payout:,}\n"
+            f"💵 Чистый выигрыш: ${payout - bet:,}"
         )
+
     else:
-        # Записываем поражение и начисляем небольшой опыт.
         record_game(
             user.id,
             won=False,
@@ -140,17 +166,21 @@ async def slots_command(
             xp_reward=LOSS_XP,
         )
 
-        await context.bot.send_message(
-            chat_id=chat.id,
-            text=(
-                "🎰 СЛОТЫ ACECOIN\n"
-                "━━━━━━━━━━━━━━━━━━\n\n"
-                f"👤 Игрок: {user.first_name}\n"
-                f"🎲 Ставка: ${bet:,}\n"
-                "💥 В этот раз без выигрыша.\n"
-                f"⭐ Опыт: +{LOSS_XP} XP\n"
-                f"💰 Баланс: ${get_balance(user.id):,}\n\n"
-                "Попробуй ещё раз: /slots 100\n"
-                "━━━━━━━━━━━━━━━━━━"
-            ),
-        )
+        xp_text = f"+{LOSS_XP} XP"
+        outcome_text = "💥 В этот раз без выигрыша."
+
+    current_balance = get_balance(user.id)
+
+    await message.reply_text(
+        "🎰 СЛОТЫ ACECOIN\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Игрок: {user.first_name}\n"
+        f"🎲 Ставка: ${bet:,}\n\n"
+        f"   {' │ '.join(result)}\n\n"
+        f"📋 Комбинация: {combination_name}\n"
+        f"{outcome_text}\n"
+        f"⭐ Опыт: {xp_text}\n"
+        f"👛 Баланс: ${current_balance:,}\n\n"
+        "Сыграть ещё: /acslots 100\n"
+        "━━━━━━━━━━━━━━━━━━"
+    )

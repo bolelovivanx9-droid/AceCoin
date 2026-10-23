@@ -1,4 +1,3 @@
-
 import html
 import logging
 
@@ -8,6 +7,7 @@ from handlers.quests import show_quests
 
 from telegram import (
     Update,
+    ReplyKeyboardRemove,
     ReplyKeyboardMarkup,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -430,7 +430,7 @@ async def process_loan_amount(message, context, user_id, text):
                     "Сначала полностью верни старый долг."
                 ),
                 "user_not_found": (
-                    "❌ Профиль не найден. Нажми /start."
+                    "❌ Профиль не найден. Нажми /acstart."
                 ),
             }
 
@@ -496,7 +496,7 @@ async def process_loan_amount(message, context, user_id, text):
                     f"👛 Твой баланс: {get_balance(user_id):,} $."
                 ),
                 "user_not_found": (
-                    "❌ Профиль не найден. Нажми /start."
+                    "❌ Профиль не найден. Нажми /acstart."
                 ),
             }
 
@@ -567,6 +567,90 @@ async def balance(
 
 
 # ==================================================
+# КОМАНДА /MENU
+# ==================================================
+
+async def menu_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    user = update.effective_user
+    message = update.effective_message
+
+    if not user or not message:
+        return
+
+    add_user(user.id, user.username or "unknown")
+
+    await message.reply_text(
+        "🎰 <b>ACECOIN CASINO</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "Добро пожаловать в главное меню!\n"
+        "Выбери нужный раздел с помощью кнопок ниже.\n\n"
+        "💰 Баланс — /acbalance\n"
+        "🎁 Ежедневный бонус — /acdaily\n"
+        "📖 Помощь — /achelp\n\n"
+        "━━━━━━━━━━━━━━━━━━",
+        parse_mode="HTML",
+        reply_markup=main_menu(),
+    )
+
+
+# ==================================================
+# КОМАНДА /DAILY
+# ==================================================
+
+async def daily_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    user = update.effective_user
+    message = update.effective_message
+
+    if not user or not message:
+        return
+
+    add_user(user.id, user.username or "unknown")
+
+    claimed, remaining = claim_daily_bonus(user.id)
+    money = get_balance(user.id)
+
+    if claimed:
+        await message.reply_text(
+            "🎁 <b>ЕЖЕДНЕВНЫЙ БОНУС ПОЛУЧЕН!</b>\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            f"🪙 Начислено: <b>+{DAILY_BONUS_AMOUNT:,} $</b>\n"
+            f"💰 Твой баланс: <b>{money:,} $</b>\n\n"
+            "Возвращайся через 24 часа за новым бонусом!\n"
+            "━━━━━━━━━━━━━━━━━━",
+            parse_mode="HTML",
+            reply_markup=main_menu(),
+        )
+
+    elif remaining > 0:
+        hours = remaining // 3600
+        minutes = (remaining % 3600) // 60
+
+        await message.reply_text(
+            "⏳ <b>ЕЖЕДНЕВНЫЙ БОНУС</b>\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "Ты уже получил свой бонус.\n"
+            f"🕒 До следующего: <b>{hours} ч. {minutes} мин.</b>\n"
+            f"💰 Твой баланс: <b>{money:,} $</b>\n\n"
+            "━━━━━━━━━━━━━━━━━━",
+            parse_mode="HTML",
+            reply_markup=main_menu(),
+        )
+
+    else:
+        await message.reply_text(
+            "❌ Не удалось получить бонус.\n"
+            "Попробуй ещё раз позже.",
+            reply_markup=main_menu(),
+        )
+
+
+# ==================================================
 # ПЕРЕВОДЫ
 # ==================================================
 
@@ -608,7 +692,7 @@ async def transfer_command(
             await message.reply_text(
                 "💸 <b>ПЕРЕВОД</b>\n\n"
                 "Ответь на сообщение игрока командой:\n"
-                "<code>/pay 500</code>",
+                "<code>/acpay 500</code>",
                 parse_mode="HTML",
             )
             return
@@ -619,9 +703,9 @@ async def transfer_command(
                 "💸 <b>ПЕРЕВОД</b>\n"
                 "━━━━━━━━━━━━━━━━━━\n\n"
                 "Перевод по username:\n"
-                "<code>/pay @username 500</code>\n\n"
+                "<code>/acpay @username 500</code>\n\n"
                 "Или ответом на сообщение:\n"
-                "<code>/pay 500</code>\n\n"
+                "<code>/acpay 500</code>\n\n"
                 "💰 Комиссия: 0 $\n"
                 "━━━━━━━━━━━━━━━━━━",
                 parse_mode="HTML",
@@ -642,7 +726,7 @@ async def transfer_command(
         if not recipient_record:
             await message.reply_text(
                 "❌ Игрок не найден в базе AceCoin Casino.\n\n"
-                "Он должен сначала запустить бота командой /start."
+                "Он должен сначала запустить бота командой /acstart."
             )
             return
 
@@ -679,7 +763,7 @@ async def transfer_command(
     except (ValueError, TypeError):
         await message.reply_text(
             "❌ Сумма должна быть целым числом.\n"
-            "Пример: <code>/pay 500</code>",
+            "Пример: <code>/acpay 500</code>",
             parse_mode="HTML",
         )
         return
@@ -706,7 +790,7 @@ async def transfer_command(
         errors = {
             "invalid_amount": "❌ Некорректная сумма перевода.",
             "same_user": "❌ Нельзя переводить монеты самому себе.",
-            "sender_not_found": "❌ Твой профиль не найден. Нажми /start.",
+            "sender_not_found": "❌ Твой профиль не найден. Нажми /acstart.",
             "recipient_not_found": "❌ Профиль получателя не найден.",
             "insufficient_funds": "❌ Недостаточно средств для перевода.",
         }
@@ -779,7 +863,7 @@ async def treasure_command(
         await update.message.reply_text(
             "💎 <b>СОКРОВИЩА</b>\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-            "Использование: <code>/treasure 100</code>\n"
+            "Использование: <code>/actreasure 100</code>\n"
             "Число — размер твоей ставки.\n\n"
             "━━━━━━━━━━━━━━━━━━",
             parse_mode="HTML",
@@ -791,7 +875,7 @@ async def treasure_command(
     except ValueError:
         await update.message.reply_text(
             "❌ Ставка должна быть целым числом.\n"
-            "Пример: <code>/treasure 100</code>",
+            "Пример: <code>/actreasure 100</code>",
             parse_mode="HTML",
         )
         return
@@ -1165,7 +1249,7 @@ async def menu_buttons(
             "💎 <b>СОКРОВИЩА</b>\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
             "Чтобы начать игру, используй команду:\n"
-            "<code>/treasure 100</code>\n\n"
+            "<code>/actreasure 100</code>\n\n"
             "Замени 100 на размер своей ставки.\n"
             "━━━━━━━━━━━━━━━━━━",
             parse_mode="HTML",
@@ -1183,17 +1267,17 @@ async def menu_buttons(
             "🔹 Открывай клетки и ищи сокровища.\n"
             "🔹 Остерегайся бомб.\n"
             "🔹 Начни игру командой:\n"
-            "<code>/treasure 100</code>\n\n"
+            "<code>/actreasure 100</code>\n\n"
             "💡 Число в команде — размер ставки.\n"
             "Например, для ставки 500 используй:\n"
-            "<code>/treasure 500</code>\n\n"
+            "<code>/actreasure 500</code>\n\n"
             "━━━━━━━━━━━━━━━━━━\n"
             "🛠️ <b>НОВЫЕ ИГРЫ</b>\n"
             "Другие игровые режимы появятся по мере "
             "развития казино.\n\n"
-            "🪙 Баланс: <code>/balance</code>\n"
-            "💸 Перевод: <code>/pay @username 500</code>\n"
-            "📖 Помощь: <code>/help</code>\n\n"
+            "🪙 Баланс: <code>/acbalance</code>\n"
+            "💸 Перевод: <code>/acpay @username 500</code>\n"
+            "📖 Помощь: <code>/achelp</code>\n\n"
             "━━━━━━━━━━━━━━━━━━\n"
             "🔥 <i>Твоя ставка. Твой риск. Твой путь к вершине.</i>",
             parse_mode="HTML",
@@ -1207,7 +1291,7 @@ async def menu_buttons(
     elif text == "📊 Статистика":
         await stats_command(update, context)
         return
-    
+
     elif text == "🏆 Квесты":
         await show_quests(update, context)
 
@@ -1217,7 +1301,7 @@ async def menu_buttons(
 
         if not stats:
             await message.reply_text(
-                "❌ Профиль не найден. Нажми /start и попробуй снова."
+                "❌ Профиль не найден. Нажми /acstart и попробуй снова."
             )
             return
 
@@ -1361,6 +1445,7 @@ async def menu_buttons(
             parse_mode="HTML",
         )
 
+
 # ==================================================
 # КОМАНДА /STATS И КНОПКА «СТАТИСТИКА»
 # ==================================================
@@ -1380,7 +1465,7 @@ async def stats_command(
 
     if not stats:
         await message.reply_text(
-            "❌ Профиль не найден. Нажми /start и попробуй снова."
+            "❌ Профиль не найден. Нажми /acstart и попробуй снова."
         )
         return
 
@@ -1402,6 +1487,7 @@ async def stats_command(
         "━━━━━━━━━━━━━━━━━━",
         parse_mode="HTML",
     )
+
 
 # ==================================================
 # КОМАНДА /RATING

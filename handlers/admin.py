@@ -1,4 +1,3 @@
-
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -24,8 +23,8 @@ async def add_money(
     if len(context.args) < 2:
         await update.message.reply_text(
             "Использование:\n"
-            "/addmoney ID СУММА\n\n"
-            "Пример: /addmoney 123456789 1000"
+            "/acaddmoney ID СУММА\n\n"
+            "Пример: /acaddmoney 123456789 1000"
         )
         return
 

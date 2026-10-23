@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from telegram import Update
@@ -49,9 +50,9 @@ async def transfer_history_command(
             "━━━━━━━━━━━━━━━━━━\n\n"
             "У тебя пока нет переводов.\n\n"
             "💸 Чтобы отправить монеты игроку, используй:\n"
-            "<code>/pay @username 500</code>\n\n"
+            "<code>/acpay @username 500</code>\n\n"
             "Или ответь на сообщение игрока командой:\n"
-            "<code>/pay 500</code>\n\n"
+            "<code>/acpay 500</code>\n\n"
             "━━━━━━━━━━━━━━━━━━",
             parse_mode="HTML",
         )

@@ -21,7 +21,7 @@ async def achievements_command(
     if not achievements:
         await message.reply_text(
             "❌ Не удалось загрузить достижения. "
-            "Нажми /start и попробуй снова."
+            "Нажми /acstart и попробуй снова."
         )
         return
 

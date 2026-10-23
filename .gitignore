@@ -1,4 +1,11 @@
 .env
+.env.*
+!.env.example
+
 __pycache__/
-*.pyc
+*.py[cod]
+
 database/*.db
+database/*.db-*
+
+bot_mute_state.json

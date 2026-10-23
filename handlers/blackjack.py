@@ -1,4 +1,3 @@
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -79,7 +78,7 @@ async def blackjack_command(
     if not context.args:
         await message.reply_text(
             "🃏 Чтобы сыграть, укажи ставку:\n"
-            "/blackjack 100"
+            "/acblackjack 100"
         )
         return
 
@@ -234,7 +233,7 @@ async def blackjack_click(
     if not game:
         await query.edit_message_text(
             "⚠️ Активная партия не найдена. "
-            "Начни новую командой /blackjack."
+            "Начни новую командой /acblackjack."
         )
         return
 

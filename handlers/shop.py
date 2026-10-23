@@ -1,3 +1,4 @@
+
 import logging
 
 from telegram import (
@@ -28,7 +29,6 @@ from core.shop_database import (
 logger = logging.getLogger(__name__)
 
 CATEGORIES = [
-    "frames",
     "boosters",
     "titles",
     "relics",
@@ -188,7 +188,6 @@ async def show_shop(update, context):
         "🛒 <b>МАГАЗИН ACECOIN</b>\n"
         "━━━━━━━━━━━━━━━━━━\n\n"
         "Выбирай предметы для своего профиля.\n\n"
-        "🖼️ Рамки — оформление профиля\n"
         "⭐ XP-бустеры — мгновенный опыт\n"
         "🏷️ Титулы — престиж и статус\n"
         "🏺 Реликвии — редкие коллекционные предметы\n"
@@ -389,7 +388,7 @@ async def buy_item(query, user_id, item_id):
     if not success:
         messages = {
             "unknown_item": "Такого товара нет.",
-            "user_not_found": "Сначала отправь /start.",
+            "user_not_found": "Сначала отправь /acstart.",
             "insufficient_funds": "Недостаточно средств!",
             "already_owned": "У тебя уже есть этот предмет.",
             "relic_sold": "Реликвия уже навсегда продана другому игроку.",
@@ -491,9 +490,6 @@ async def show_inventory(query, user_id):
         for item in inventory:
             marker = ""
 
-            if item["id"] == equipped["frame_id"]:
-                marker = " 🟢 <i>Надета</i>"
-
             if item["id"] == equipped["title_id"]:
                 marker = " 🟢 <i>Активен</i>"
 
@@ -502,10 +498,10 @@ async def show_inventory(query, user_id):
     keyboard = []
 
     for item in inventory:
-        if item["kind"] in ("frame", "title", "relic"):
+        if item["kind"] in ("title", "relic"):
             keyboard.append([
                 InlineKeyboardButton(
-                    f"Надеть: {item['name']}",
+                    f"Выбрать: {item['name']}",
                     callback_data=f"shop_equip:{item['id']}",
                 )
             ])
@@ -574,14 +570,19 @@ async def equip_owned_item(query, user_id, item_id):
 
     if not success:
         await query.answer(
-            "Этот предмет не найден или не принадлежит тебе.",
+            "Этот предмет не найден, не принадлежит тебе "
+            "или его нельзя экипировать.",
             show_alert=True,
         )
         return
 
-    item = SHOP_ITEMS[item_id]
+    item = SHOP_ITEMS.get(item_id)
 
-    await query.answer("Предмет экипирован!")
+    if not item:
+        await query.answer("Предмет не найден.", show_alert=True)
+        return
+
+    await query.answer("Предмет выбран!")
     await query.edit_message_text(
         f"✅ Ты выбрал: <b>{item['name']}</b>\n\n"
         "Изменение сохранено.",

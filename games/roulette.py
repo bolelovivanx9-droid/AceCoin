@@ -1,3 +1,4 @@
+
 import random
 
 from telegram import Update
@@ -46,10 +47,10 @@ async def roulette_command(
             "🎡 РУЛЕТКА ACECOIN\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
             "Использование:\n"
-            "/roulette red 100 — красное\n"
-            "/roulette black 100 — чёрное\n"
-            "/roulette green 100 — зеро\n"
-            "/roulette 17 100 — число\n\n"
+            "/acroulette red 100 — красное\n"
+            "/acroulette black 100 — чёрное\n"
+            "/acroulette green 100 — зеро\n"
+            "/acroulette 17 100 — число\n\n"
             "🔴 Красное: выплата 2x\n"
             "⚫ Чёрное: выплата 2x\n"
             "🟢 Зеро: выплата 36x\n"
@@ -67,7 +68,7 @@ async def roulette_command(
     except (ValueError, TypeError):
         await message.reply_text(
             "❌ Ставка должна быть целым числом.\n"
-            "Пример: /roulette red 100"
+            "Пример: /acroulette red 100"
         )
         return
 

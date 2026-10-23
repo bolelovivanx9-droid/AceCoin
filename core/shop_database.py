@@ -14,46 +14,6 @@ SECRET_UNLOCK_ACHIEVEMENT = "games_10"
 
 
 SHOP_ITEMS = {
-    "frame_bronze": {
-        "name": "Бронзовая рамка",
-        "description": "Сдержанное оформление карточки профиля.",
-        "category": "frames",
-        "price": 2500,
-        "kind": "frame",
-        "rarity": "Обычный",
-    },
-    "frame_silver": {
-        "name": "Серебряная рамка",
-        "description": "Серебристое оформление профиля.",
-        "category": "frames",
-        "price": 35000,
-        "kind": "frame",
-        "rarity": "Редкий",
-    },
-    "frame_gold": {
-        "name": "Золотая рамка",
-        "description": "Золотое оформление профиля.",
-        "category": "frames",
-        "price": 100000,
-        "kind": "frame",
-        "rarity": "Эпический",
-    },
-    "frame_diamond": {
-        "name": "Алмазная рамка",
-        "description": "Драгоценное оформление профиля.",
-        "category": "frames",
-        "price": 500000,
-        "kind": "frame",
-        "rarity": "Легендарный",
-    },
-    "frame_cosmic": {
-        "name": "Космическая рамка",
-        "description": "Космическое оформление профиля.",
-        "category": "frames",
-        "price": 2000000,
-        "kind": "frame",
-        "rarity": "Мифический",
-    },
     "xp_100": {
         "name": "Малый XP-бустер",
         "description": "Мгновенно начисляет 100 XP.",
@@ -117,19 +77,6 @@ SHOP_ITEMS = {
         "kind": "relic",
         "rarity": "Уникальный",
     },
-
-    # Секретный магазин.
-    "frame_neon": {
-        "name": "Неоновая рамка",
-        "description": (
-            "Секретная неоновая рамка. Открывается вместе "
-            "с доступом к секретному магазину."
-        ),
-        "category": SECRET_CATEGORY,
-        "price": 250000,
-        "kind": "frame",
-        "rarity": "Мифический",
-    },
     "title_treasure_keeper": {
         "name": "Титул «Хранитель сокровищ»",
         "description": (
@@ -158,7 +105,6 @@ SHOP_ITEMS = {
 
 
 CATEGORY_NAMES = {
-    "frames": "🖼️ Рамки",
     "boosters": "⭐ XP-бустеры",
     "titles": "🏷️ Титулы",
     "relics": "🏺 Реликвии",
@@ -255,7 +201,7 @@ def init_shop_db():
 
 
 def get_shop_catalog(category=None):
-    """Возвращает каталог магазина."""
+    """Возвращает только актуальные товары магазина."""
     items = []
 
     for item_id, item in SHOP_ITEMS.items():
@@ -270,10 +216,7 @@ def get_shop_catalog(category=None):
 
 
 def _secret_status_cursor(cursor, user_id):
-    """
-    Проверяет доступ к секретному магазину и возвращает статус.
-    Использует уже открытый курсор, в том числе внутри транзакции.
-    """
+    """Проверяет доступ к секретному магазину."""
     user = cursor.execute("""
         SELECT xp
         FROM users
@@ -299,7 +242,6 @@ def _secret_status_cursor(cursor, user_id):
         """, (user_id, SECRET_UNLOCK_ACHIEVEMENT)).fetchone()
         via_achievement = achievement is not None
     except sqlite3.OperationalError:
-        # Например, если таблица достижений ещё не создана.
         via_achievement = False
 
     via_level = level >= SECRET_UNLOCK_LEVEL
@@ -313,7 +255,7 @@ def _secret_status_cursor(cursor, user_id):
 
 
 def get_secret_shop_status(user_id):
-    """Возвращает информацию о доступе игрока к секретному магазину."""
+    """Возвращает информацию о доступе к секретному магазину."""
     conn = get_connection()
 
     try:
@@ -403,7 +345,7 @@ def _item_unlock_status_cursor(cursor, user_id, item_id):
 
 
 def get_item_unlock_status(user_id, item_id):
-    """Проверяет доступность предмета для отображения в интерфейсе."""
+    """Проверяет доступность товара для интерфейса."""
     conn = get_connection()
 
     try:
@@ -417,7 +359,7 @@ def get_item_unlock_status(user_id, item_id):
 
 
 def get_inventory(user_id):
-    """Возвращает предметы игрока."""
+    """Возвращает актуальные предметы игрока."""
     conn = get_connection()
 
     try:
@@ -432,6 +374,8 @@ def get_inventory(user_id):
 
         for row in rows:
             item = SHOP_ITEMS.get(row["item_id"])
+
+            # Старые рамки остаются в БД, но больше не отображаются.
             if not item:
                 continue
 
@@ -447,7 +391,7 @@ def get_inventory(user_id):
 
 
 def get_equipped(user_id):
-    """Возвращает выбранную рамку и титул."""
+    """Возвращает сохранённую экипировку."""
     conn = get_connection()
 
     try:
@@ -487,7 +431,7 @@ def get_relic_status():
 
 
 def get_rare_history(item_id=None, limit=20):
-    """История редких предметов."""
+    """Возвращает историю редких предметов."""
     limit = max(1, min(int(limit), 100))
     conn = get_connection()
 
@@ -515,7 +459,7 @@ def get_rare_history(item_id=None, limit=20):
 
 
 def get_xp_daily_purchases(user_id, item_id):
-    """Количество покупок конкретного XP-бустера за текущие UTC-сутки."""
+    """Количество покупок XP-бустера за текущие UTC-сутки."""
     item = SHOP_ITEMS.get(item_id)
 
     if not item or item["kind"] != "xp":
@@ -540,11 +484,10 @@ def get_xp_daily_purchases(user_id, item_id):
 
 def purchase_item(user_id, item_id):
     """
-    Покупает предмет атомарно.
+    Атомарно покупает товар.
 
-    Возвращает (успех, код результата, данные).
-    Каждый XP-бустер разрешено купить не более двух раз
-    за UTC-сутки. XP начисляется сразу, без инвентаря.
+    XP-бустеры начисляют опыт сразу и могут покупаться
+    не более двух раз за UTC-сутки каждый.
     """
     if item_id not in SHOP_ITEMS:
         return False, "unknown_item", None
@@ -569,8 +512,6 @@ def purchase_item(user_id, item_id):
             conn.rollback()
             return False, "user_not_found", None
 
-        # Условия секретного магазина и отдельных предметов
-        # проверяются внутри той же транзакции, что и покупка.
         unlock_status = _item_unlock_status_cursor(
             cursor,
             user_id,
@@ -721,10 +662,10 @@ def purchase_item(user_id, item_id):
 
 
 def equip_item(user_id, item_id):
-    """Выбирает купленную рамку или титул."""
+    """Выбирает купленный титул или реликвию."""
     item = SHOP_ITEMS.get(item_id)
 
-    if not item or item["kind"] not in ("frame", "title", "relic"):
+    if not item or item["kind"] not in ("title", "relic"):
         return False, "not_equipable"
 
     conn = get_connection()
@@ -750,18 +691,11 @@ def equip_item(user_id, item_id):
             VALUES (?, NULL, NULL)
         """, (user_id,))
 
-        if item["kind"] == "frame":
-            cursor.execute("""
-                UPDATE shop_equipped
-                SET frame_id = ?
-                WHERE user_id = ?
-            """, (item_id, user_id))
-        else:
-            cursor.execute("""
-                UPDATE shop_equipped
-                SET title_id = ?
-                WHERE user_id = ?
-            """, (item_id, user_id))
+        cursor.execute("""
+            UPDATE shop_equipped
+            SET title_id = ?
+            WHERE user_id = ?
+        """, (item_id, user_id))
 
         conn.commit()
         return True, "equipped"
@@ -775,15 +709,13 @@ def equip_item(user_id, item_id):
 
 
 def get_equipped_details(user_id):
-    """Возвращает данные выбранной рамки и титула."""
+    """Возвращает экипировку; рамки больше не поддерживаются."""
     equipped = get_equipped(user_id)
-
-    frame = SHOP_ITEMS.get(equipped["frame_id"])
     title = SHOP_ITEMS.get(equipped["title_id"])
 
     return {
-        "frame_id": equipped["frame_id"],
-        "frame": dict(frame) if frame else None,
-        "title_id": equipped["title_id"],
+        "frame_id": None,
+        "frame": None,
+        "title_id": equipped["title_id"] if title else None,
         "title": dict(title) if title else None,
     }

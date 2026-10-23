@@ -1,4 +1,3 @@
-
 import asyncio
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -259,7 +258,7 @@ async def cancel_command(
     if status in ("accepted", "active"):
         await message.reply_text(
             "❌ Эту дуэль уже приняли.\n"
-            "Отменить её командой /cancel нельзя, "
+            "Отменить её командой /accancel нельзя, "
             "возврат ставки не выполнен."
         )
         return
@@ -333,7 +332,7 @@ async def duel_command(
         if not opponent:
             await message.reply_text(
                 "❌ Игрок не найден. Он должен запустить бота "
-                "командой /start."
+                "командой /acstart."
             )
             return
 
@@ -348,9 +347,9 @@ async def duel_command(
     else:
         await message.reply_text(
             "⚔️ Дуэль по юзернейму:\n"
-            "/duel @username 500\n\n"
+            "/acduel @username 500\n\n"
             "⚔️ Дуэль ответом на сообщение:\n"
-            "Ответь на сообщение игрока командой /duel 500"
+            "Ответь на сообщение игрока командой /acduel 500"
         )
         return
 
@@ -419,7 +418,7 @@ async def duel_command(
         f"🏆 Приз победителю: ${bet * 2:,}\n\n"
         f"⏳ На принятие: {DUEL_TIMEOUT} секунд.\n"
         "Ставки спишутся только после принятия.\n\n"
-        "Чтобы отменить свой вызов, используй /cancel."
+        "Чтобы отменить свой вызов, используй /accancel."
     )
 
     try:

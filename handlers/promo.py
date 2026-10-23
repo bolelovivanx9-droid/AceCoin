@@ -1,3 +1,4 @@
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -23,9 +24,9 @@ async def create_promo_command(
     if len(context.args) != 2:
         await update.message.reply_text(
             "Использование:\n"
-            "/createpromo НАЗВАНИЕ СУММА\n\n"
+            "/accreatepromo НАЗВАНИЕ СУММА\n\n"
             "Пример:\n"
-            "/createpromo GOLD100 500"
+            "/accreatepromo GOLD100 500"
         )
         return
 
@@ -84,9 +85,9 @@ async def promo_command(
     if len(context.args) != 1:
         await update.message.reply_text(
             "Использование:\n"
-            "/promo НАЗВАНИЕ\n\n"
+            "/acpromo НАЗВАНИЕ\n\n"
             "Пример:\n"
-            "/promo GOLD100"
+            "/acpromo GOLD100"
         )
         return
 
@@ -121,7 +122,7 @@ async def promo_command(
         )
     elif status == "user_not_found":
         await update.message.reply_text(
-            "Сначала зарегистрируйся командой /start."
+            "Сначала зарегистрируйся командой /acstart."
         )
     else:
         await update.message.reply_text(
